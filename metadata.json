@@ -1,0 +1,6 @@
+{
+  "name": "Proyecto CUN - Creación de Empresas III",
+  "description": "Plataforma estructurada para diligenciar, validar y generar en PDF profesional la entrega final del proyecto de curso de Creación de Empresas III (CEMP) según la guía oficial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

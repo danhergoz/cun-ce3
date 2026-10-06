@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@page {
+  size: letter portrait;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body,
+  #root,
+  .pdf-modal-root,
+  .pdf-modal-viewport {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body > #root > div > header,
+  body > #root > div > main,
+  .no-print {
+    display: none !important;
+  }
+
+  .printable-document-container {
+    position: static !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .pdf-page-sheet {
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    border: none !important;
+    width: 21.59cm !important;
+    min-height: 27.94cm !important;
+    padding: 2.54cm !important;
+    box-sizing: border-box !important;
+  }
+
+  .pdf-page-sheet:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+}
+
