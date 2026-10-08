@@ -1,5 +1,6 @@
 import { ProjectData } from '../types/project';
 import customSampleJson from './customSample.json';
+import { DEFAULT_ORGANIGRAMA_NODOS } from '../components/organigrama/organigramaTemplates';
 
 export const sampleProjectData: ProjectData = {
   designConfig: {
@@ -185,6 +186,7 @@ La empresa formula mezclas térmicas a base de almidón de yuca agria industrial
       tipoEstructura: 'Estructura Funcional - Matricial por Procesos',
       justificacionCultura: 'Fomenta la agilidad operativa, la colaboración interdisciplinaria y la orientación hacia la innovación sostenible y la mejora continua.',
       imagenUrl: '',
+      nodos: DEFAULT_ORGANIGRAMA_NODOS,
     },
 
     perfilesCargos: [
@@ -449,6 +451,7 @@ export const emptyProjectData: ProjectData = {
     organigrama: {
       tipoEstructura: '',
       justificacionCultura: '',
+      nodos: [],
     },
     perfilesCargos: [],
     figuraLegal: {

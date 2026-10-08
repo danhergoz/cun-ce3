@@ -18,6 +18,9 @@ import {
   calculateGastosFijosMensuales,
 } from '../utils/helpers';
 import { generateVectorPDF } from '../utils/vectorPdfGenerator';
+import { OrganigramaViewer } from './organigrama/OrganigramaViewer';
+import { DEFAULT_ORGANIGRAMA_NODOS } from './organigrama/organigramaTemplates';
+import { generateOrganigramaImage } from './organigrama/organigramaCanvasGenerator';
 
 interface PDFPreviewerProps {
   isOpen: boolean;
@@ -71,11 +74,12 @@ const PAGE_SECTIONS = [
   { page: 6, code: 'SEC-05', title: '0. Idea de Negocio (Descripción y Mercado)' },
   { page: 7, code: 'SEC-05B', title: '0. Portafolio de Productos y Servicios (con Fotos)' },
   { page: 8, code: 'SEC-06', title: 'Unidad Estratégica I: Direccionamiento y Cadena de Valor' },
-  { page: 9, code: 'SEC-07', title: 'Unidad Estratégica I: Estructura Organizacional y Marco Legal' },
-  { page: 10, code: 'SEC-08', title: 'Unidad Estratégica II: Inversión Inicial y Financiación' },
-  { page: 11, code: 'SEC-09', title: 'Unidad Estratégica II: Costos, Gastos y Punto de Equilibrio' },
-  { page: 12, code: 'SEC-10', title: 'Unidad Estratégica III: Estados e Indicadores Financieros' },
-  { page: 13, code: 'SEC-11', title: 'Conclusiones, Recomendaciones y Bibliografía' },
+  { page: 9, code: 'SEC-07A', title: 'Unidad Estratégica I: Estructura Organizacional y Organigrama' },
+  { page: 10, code: 'SEC-07B', title: 'Unidad Estratégica I: Perfiles de Cargos y Estudio Legal' },
+  { page: 11, code: 'SEC-08', title: 'Unidad Estratégica II: Inversión Inicial y Financiación' },
+  { page: 12, code: 'SEC-09', title: 'Unidad Estratégica II: Costos, Gastos y Punto de Equilibrio' },
+  { page: 13, code: 'SEC-10', title: 'Unidad Estratégica III: Estados e Indicadores Financieros' },
+  { page: 14, code: 'SEC-11', title: 'Conclusiones, Recomendaciones y Bibliografía' },
 ];
 
 export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
@@ -107,6 +111,23 @@ export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
   const currentMeta = TEMPLATE_META[templateId] || TEMPLATE_META['cun-oficial'];
   const primaryColor = designConfig.primaryColor || currentMeta.defaultColor;
   const totalPages = PAGE_SECTIONS.length;
+
+  const organigramaNodos = unidadI.organigrama?.nodos && unidadI.organigrama.nodos.length > 0
+    ? unidadI.organigrama.nodos
+    : DEFAULT_ORGANIGRAMA_NODOS;
+
+  const organigramaDisplayUrl =
+    (unidadI.organigrama?.nodos && unidadI.organigrama.nodos.length > 0)
+      ? generateOrganigramaImage(
+          unidadI.organigrama.nodos,
+          unidadI.organigrama?.tipoEstructura || 'Estructura Funcional por Procesos',
+          portada.nombreTrabajo || 'EcoPack Solutions S.A.S.'
+        )
+      : (unidadI.organigrama?.imagenUrl || generateOrganigramaImage(
+          DEFAULT_ORGANIGRAMA_NODOS,
+          unidadI.organigrama?.tipoEstructura || 'Estructura Funcional por Procesos',
+          portada.nombreTrabajo || 'EcoPack Solutions S.A.S.'
+        ));
 
   const fontFamilyClass =
     designConfig.fontFamily === 'serif'
@@ -857,11 +878,12 @@ export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
                       ['SEC-05', '0. Idea de Negocio: Descripción, Justificación y Oportunidad de Mercado', 'Pág. 6'],
                       ['SEC-05B', '0. Portafolio de Productos y Servicios (con Registro Fotográfico)', 'Pág. 7'],
                       ['SEC-06', 'Unidad Estratégica I: Direccionamiento Estratégico y Cadena de Valor', 'Pág. 8'],
-                      ['SEC-07', 'Unidad Estratégica I: Estructura Organizacional, Perfiles de Cargo y Marco Legal', 'Pág. 9'],
-                      ['SEC-08', 'Unidad Estratégica II: Modelo Financiero, Inversión Inicial y Financiación', 'Pág. 10'],
-                      ['SEC-09', 'Unidad Estratégica II: Costos Variables, Gastos Fijos y Punto de Equilibrio', 'Pág. 11'],
-                      ['SEC-10', 'Unidad Estratégica III: Estados Financieros Proyectados, VPN, TIR e Indicadores', 'Pág. 12'],
-                      ['SEC-11', 'Conclusiones, Recomendaciones Estratégicas y Referencias Bibliográficas', 'Pág. 13'],
+                      ['SEC-07A', 'Unidad Estratégica I: Estructura Organizacional y Organigrama de la Empresa', 'Pág. 9'],
+                      ['SEC-07B', 'Unidad Estratégica I: Perfiles de Cargos Directivos, Constitución y Marco Legal', 'Pág. 10'],
+                      ['SEC-08', 'Unidad Estratégica II: Modelo Financiero, Inversión Inicial y Financiación', 'Pág. 11'],
+                      ['SEC-09', 'Unidad Estratégica II: Costos Variables, Gastos Fijos y Punto de Equilibrio', 'Pág. 12'],
+                      ['SEC-10', 'Unidad Estratégica III: Estados Financieros Proyectados, VPN, TIR e Indicadores', 'Pág. 13'],
+                      ['SEC-11', 'Conclusiones, Recomendaciones Estratégicas y Referencias Bibliográficas', 'Pág. 14'],
                     ].map(([code, title, page], idx) => (
                       <tr key={idx} className="border-b border-slate-200">
                         <td className="py-2 px-2 font-mono font-bold" style={{ color: primaryColor }}>
@@ -1157,30 +1179,67 @@ export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
           )}
 
           {/* =====================================================================
-              PÁGINA 9: UNIDAD ESTRATÉGICA I (PARTE B: ESTRUCTURA ORGANIZACIONAL Y MARCO LEGAL)
+              PÁGINA 9: UNIDAD ESTRATÉGICA I (PARTE B: ESTRUCTURA ORGANIZACIONAL Y ORGANIGRAMA COMPLETO)
           ===================================================================== */}
           {renderPageWrapper(
             9,
-            'SEC-07',
-            'Unidad Estratégica I: Organización y Marco Legal',
-            <div className="space-y-3.5">
+            'SEC-07A',
+            'Unidad Estratégica I: Estructura Organizacional y Organigrama',
+            <div className="space-y-4">
               {renderSectionHeading(
-                'Unidad Estratégica I: Estructura Organizacional y Marco Legal',
-                'Sección 7'
+                'Unidad Estratégica I: Estructura Organizacional y Organigrama',
+                'Sección 7A'
               )}
 
-              <div>
+              <div className="space-y-2">
                 <h3 className="font-bold text-xs text-slate-900">
                   2.1. Estructura Organizacional ({unidadI.organigrama.tipoEstructura})
                 </h3>
-                <p className="indent-[1.27cm] text-slate-800">{unidadI.organigrama.justificacionCultura}</p>
+                <p className="indent-[1.27cm] text-slate-800 text-[10.5px] leading-relaxed">
+                  {unidadI.organigrama.justificacionCultura || 'La estructura organizacional responde a la necesidad de articular las áreas funcionales de la empresa con los objetivos estratégicos y el direccionamiento ético y de calidad del proyecto.'}
+                </p>
               </div>
 
-              {/* Tabla APA 6: Perfiles de Cargos */}
-              <div className="space-y-1">
+              {/* Figura APA 1: Organigrama Estructural de la Compañía */}
+              <div className="space-y-2 pt-1">
                 <div>
-                  <span className="font-bold text-slate-900 block">Tabla 6</span>
-                  <span className="italic text-slate-700">2.2. Perfiles de Cargos Directivos y Operativos</span>
+                  <span className="font-bold text-slate-900 block text-[11px]">Figura 1</span>
+                  <span className="italic text-slate-700 text-[10.5px]">
+                    Organigrama Estructural de la Compañía ({unidadI.organigrama.tipoEstructura})
+                  </span>
+                </div>
+                <div className="border border-slate-300 rounded-xl p-3 bg-white flex justify-center items-center shadow-xs">
+                  <img
+                    src={organigramaDisplayUrl}
+                    alt="Organigrama Empresarial Completo"
+                    className="w-full h-auto max-h-[14.5cm] object-contain rounded"
+                  />
+                </div>
+                <p className="text-[9.5px] text-slate-600">
+                  <span className="italic">Nota.</span> Representación gráfica de la arquitectura organizacional, jerarquías de mando directo y órganos de asesoría (Staff) de {portada.nombreTrabajo || 'la empresa'}.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* =====================================================================
+              PÁGINA 10: UNIDAD ESTRATÉGICA I (PARTE C: PERFILES DE CARGOS Y MARCO LEGAL)
+          ===================================================================== */}
+          {renderPageWrapper(
+            10,
+            'SEC-07B',
+            'Unidad Estratégica I: Perfiles de Cargos y Estudio Legal',
+            <div className="space-y-4">
+              {renderSectionHeading(
+                'Unidad Estratégica I: Perfiles de Cargos Directivos y Marco Legal',
+                'Sección 7B'
+              )}
+
+              {/* Tabla APA 6: Perfiles de Cargos */}
+              <div className="space-y-1.5">
+                <div>
+                  <span className="font-bold text-slate-900 block text-[11px]">Tabla 6</span>
+                  <span className="italic text-slate-700 text-[10px]">2.2. Perfiles de Cargos Directivos y Operativos</span>
                 </div>
                 <table className="w-full text-[9.5px] border-collapse border-y-2 border-slate-900">
                   <thead>
@@ -1207,10 +1266,10 @@ export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
               </div>
 
               {/* Tabla APA 7: Marco Legal */}
-              <div className="space-y-1">
+              <div className="space-y-1.5 pt-2">
                 <div>
-                  <span className="font-bold text-slate-900 block">Tabla 7</span>
-                  <span className="italic text-slate-700">3. Figura Legal, Capital Social y 4. Normatividad</span>
+                  <span className="font-bold text-slate-900 block text-[11px]">Tabla 7</span>
+                  <span className="italic text-slate-700 text-[10px]">3. Figura Legal, Capital Social y 4. Normatividad</span>
                 </div>
                 <table className="w-full text-[9.5px] border-collapse border-y-2 border-slate-900">
                   <tbody>
@@ -1250,10 +1309,10 @@ export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
           )}
 
           {/* =====================================================================
-              PÁGINA 10: UNIDAD ESTRATÉGICA II (PARTE A: INVERSIÓN INICIAL Y FINANCIACIÓN)
+              PÁGINA 11: UNIDAD ESTRATÉGICA II (PARTE A: INVERSIÓN INICIAL Y FINANCIACIÓN)
           ===================================================================== */}
           {renderPageWrapper(
-            10,
+            11,
             'SEC-08',
             'Unidad Estratégica II: Inversión Inicial y Financiación',
             <div className="space-y-3.5">
@@ -1359,10 +1418,10 @@ export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
           )}
 
           {/* =====================================================================
-              PÁGINA 11: UNIDAD ESTRATÉGICA II (PARTE B: COSTOS, GASTOS Y PUNTO DE EQUILIBRIO)
+              PÁGINA 12: UNIDAD ESTRATÉGICA II (PARTE B: COSTOS, GASTOS Y PUNTO DE EQUILIBRIO)
           ===================================================================== */}
           {renderPageWrapper(
-            11,
+            12,
             'SEC-09',
             'Unidad Estratégica II: Costos, Gastos y Punto de Equilibrio',
             <div className="space-y-3.5">
@@ -1455,10 +1514,10 @@ export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
           )}
 
           {/* =====================================================================
-              PÁGINA 12: UNIDAD ESTRATÉGICA III (ESTADOS FINANCIEROS E INDICADORES)
+              PÁGINA 13: UNIDAD ESTRATÉGICA III (ESTADOS FINANCIEROS E INDICADORES)
           ===================================================================== */}
           {renderPageWrapper(
-            12,
+            13,
             'SEC-10',
             'Unidad Estratégica III: Estados e Indicadores Financieros',
             <div className="space-y-3.5">
@@ -1597,10 +1656,10 @@ export const PDFPreviewer: React.FC<PDFPreviewerProps> = ({
           )}
 
           {/* =====================================================================
-              PÁGINA 13: CONCLUSIONES, RECOMENDACIONES Y BIBLIOGRAFÍA (NORMAS APA)
+              PÁGINA 14: CONCLUSIONES, RECOMENDACIONES Y BIBLIOGRAFÍA (NORMAS APA)
           ===================================================================== */}
           {renderPageWrapper(
-            13,
+            14,
             'SEC-11',
             'Conclusiones, Recomendaciones y Bibliografía APA',
             <div className="space-y-4">

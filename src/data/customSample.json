@@ -156,7 +156,81 @@
     "organigrama": {
       "tipoEstructura": "Estructura Funcional - Matricial por Procesos",
       "justificacionCultura": "Fomenta la agilidad operativa, la colaboración interdisciplinaria y la orientación hacia la innovación sostenible y la mejora continua.",
-      "imagenUrl": ""
+      "imagenUrl": "",
+      "nodos": [
+        {
+          "id": "org-1",
+          "cargo": "Junta de Socios / Asamblea General",
+          "nombre": "Socios Fundadores",
+          "area": "Alta Dirección",
+          "tipo": "directivo",
+          "parentId": null,
+          "color": "#003366"
+        },
+        {
+          "id": "org-2",
+          "cargo": "Gerente General y Representante Legal",
+          "nombre": "Daniel Hernández Gómez",
+          "area": "Dirección General",
+          "tipo": "directivo",
+          "parentId": "org-1",
+          "color": "#1d4ed8"
+        },
+        {
+          "id": "org-staff",
+          "cargo": "Revisoría Fiscal y Contador Externo",
+          "nombre": "Asesoría Contable",
+          "area": "Staff / Asesoría",
+          "tipo": "staff",
+          "parentId": "org-2",
+          "color": "#475569"
+        },
+        {
+          "id": "org-3",
+          "cargo": "Director de Operaciones y Calidad",
+          "nombre": "Dirección Operativa",
+          "area": "Producción y Planta",
+          "tipo": "departamento",
+          "parentId": "org-2",
+          "color": "#059669"
+        },
+        {
+          "id": "org-4",
+          "cargo": "Ejecutivo de Ventas y Cuentas Clave",
+          "nombre": "Área Comercial",
+          "area": "Comercial y Marketing",
+          "tipo": "departamento",
+          "parentId": "org-2",
+          "color": "#d97706"
+        },
+        {
+          "id": "org-5",
+          "cargo": "Coordinador de Sostenibilidad e I+D",
+          "nombre": "Innovación",
+          "area": "Desarrollo de Producto",
+          "tipo": "departamento",
+          "parentId": "org-2",
+          "color": "#7c3aed"
+        },
+        {
+          "id": "org-6",
+          "cargo": "Técnico Operario de Producción 1",
+          "nombre": "Operaciones",
+          "area": "Planta de Producción",
+          "tipo": "operativo",
+          "parentId": "org-3",
+          "color": "#0d9488"
+        },
+        {
+          "id": "org-7",
+          "cargo": "Técnico Operario de Producción 2",
+          "nombre": "Operaciones",
+          "area": "Planta de Producción",
+          "tipo": "operativo",
+          "parentId": "org-3",
+          "color": "#0d9488"
+        }
+      ]
     },
     "perfilesCargos": [
       {

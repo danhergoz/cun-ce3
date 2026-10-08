@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   app.use(express.json({ limit: "10mb" }));
 
@@ -41,6 +41,7 @@ async function startServer() {
       if (!projectData || !projectData.portada) {
         return res.status(400).json({ success: false, error: "Datos del proyecto inválidos" });
       }
+      fs.mkdirSync(path.dirname(sampleFilePath), { recursive: true });
       fs.writeFileSync(sampleFilePath, JSON.stringify(projectData, null, 2), "utf-8");
       res.json({ success: true, message: "Información de ejemplo actualizada exitosamente en el servidor" });
     } catch (err: any) {
@@ -105,7 +106,7 @@ Requisitos según la Guía CUN:
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.8-flash",
         contents: promptText,
       });
 
@@ -139,7 +140,7 @@ Proporciona únicamente el texto mejorado y perfeccionado.
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.8-flash",
         contents: promptText,
       });
 

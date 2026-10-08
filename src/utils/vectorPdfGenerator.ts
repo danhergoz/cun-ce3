@@ -6,6 +6,8 @@ import {
   calculateFinanciacionTotal,
   calculateGastosFijosMensuales,
 } from './helpers';
+import { generateOrganigramaImage } from '../components/organigrama/organigramaCanvasGenerator';
+import { DEFAULT_ORGANIGRAMA_NODOS } from '../components/organigrama/organigramaTemplates';
 
 // Formato Carta (Letter) oficial: 21.59 cm x 27.94 cm = 215.9 mm x 279.4 mm
 const LETTER_WIDTH = 215.9;
@@ -16,7 +18,7 @@ const CONTENT_WIDTH = LETTER_WIDTH - APA_MARGIN * 2; // 165.1 mm
 // Sangría de primera línea: 1.27 cm = 12.7 mm
 const APA_INDENT = 12.7;
 
-const TOTAL_PAGES = 11;
+const TOTAL_PAGES = 12;
 
 interface RgbColor {
   r: number;
@@ -55,7 +57,7 @@ async function compressImageForPdf(
   maxWidth = 200,
   maxHeight = 160,
   asPng = false
-): Promise<{ dataUrl: string; format: 'JPEG' | 'PNG' } | null> {
+): Promise<{ dataUrl: string; format: 'JPEG' | 'PNG'; width: number; height: number } | null> {
   if (!url || typeof url !== 'string' || !url.trim()) return null;
 
   const isDataUrl = url.startsWith('data:image/');
@@ -68,7 +70,7 @@ async function compressImageForPdf(
     }
     const timeout = setTimeout(() => {
       if (isDataUrl) {
-        resolve({ dataUrl: url, format: isPng ? 'PNG' : 'JPEG' });
+        resolve({ dataUrl: url, format: isPng ? 'PNG' : 'JPEG', width: maxWidth, height: maxHeight });
       } else {
         resolve(null);
       }
@@ -87,7 +89,7 @@ async function compressImageForPdf(
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          if (isDataUrl) resolve({ dataUrl: url, format: isPng ? 'PNG' : 'JPEG' });
+          if (isDataUrl) resolve({ dataUrl: url, format: isPng ? 'PNG' : 'JPEG', width: w, height: h });
           else resolve(null);
           return;
         }
@@ -98,10 +100,10 @@ async function compressImageForPdf(
         ctx.drawImage(img, 0, 0, w, h);
         const format: 'JPEG' | 'PNG' = isPng ? 'PNG' : 'JPEG';
         const dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85);
-        resolve({ dataUrl, format });
+        resolve({ dataUrl, format, width: w, height: h });
       } catch {
         if (isDataUrl) {
-          resolve({ dataUrl: url, format: isPng ? 'PNG' : 'JPEG' });
+          resolve({ dataUrl: url, format: isPng ? 'PNG' : 'JPEG', width: maxWidth, height: maxHeight });
         } else {
           resolve(null);
         }
@@ -111,7 +113,7 @@ async function compressImageForPdf(
     img.onerror = () => {
       clearTimeout(timeout);
       if (isDataUrl) {
-        resolve({ dataUrl: url, format: isPng ? 'PNG' : 'JPEG' });
+        resolve({ dataUrl: url, format: isPng ? 'PNG' : 'JPEG', width: maxWidth, height: maxHeight });
       } else {
         resolve(null);
       }
@@ -178,6 +180,30 @@ export async function generateVectorPDF(
     if (pUrl) {
       productImages[i] = await compressImageForPdf(pUrl, 160, 160, false);
     }
+  }
+
+  // Pre-cargar o generar imagen en alta resolución del organigrama
+  let organigramaImage: { dataUrl: string; format: 'JPEG' | 'PNG'; width: number; height: number } | null = null;
+  const orgNodos =
+    unidadI.organigrama?.nodos && unidadI.organigrama.nodos.length > 0
+      ? unidadI.organigrama.nodos
+      : DEFAULT_ORGANIGRAMA_NODOS;
+
+  const rawOrgUrl =
+    (unidadI.organigrama?.nodos && unidadI.organigrama.nodos.length > 0)
+      ? generateOrganigramaImage(
+          unidadI.organigrama.nodos,
+          unidadI.organigrama?.tipoEstructura || 'Estructura Funcional por Procesos',
+          portada.nombreTrabajo || 'EcoPack Solutions S.A.S.'
+        )
+      : (unidadI.organigrama?.imagenUrl || generateOrganigramaImage(
+          DEFAULT_ORGANIGRAMA_NODOS,
+          unidadI.organigrama?.tipoEstructura || 'Estructura Funcional por Procesos',
+          portada.nombreTrabajo || 'EcoPack Solutions S.A.S.'
+        ));
+
+  if (rawOrgUrl) {
+    organigramaImage = await compressImageForPdf(rawOrgUrl, 1800, 1200, true);
   }
 
   // Encabezado y pie de página limpios (SIN nombres de plantillas, ni "CUN Opción X", ni características de papel/márgenes)
@@ -753,11 +779,12 @@ export async function generateVectorPDF(
         ['SEC-04', 'Contenido: Introducción, Objetivos, Claves de Éxito, Resumen y Video Pitch', 'Pág. 4'],
         ['SEC-05', '0. Idea de Negocio: Descripción, Justificación, Mercado y Portafolio con Imágenes', 'Pág. 5'],
         ['SEC-06', 'Unidad Estratégica I (Parte A): Misión, Visión, Objetivos, Valores y Cadena de Valor', 'Pág. 6'],
-        ['SEC-07', 'Unidad Estratégica I (Parte B): Organigrama, Perfiles de Cargos, Figura Legal y Normas', 'Pág. 7'],
-        ['SEC-08', 'Unidad Estratégica II (Parte A): Modelo Financiero, Inversión Inicial y Financiación', 'Pág. 8'],
-        ['SEC-09', 'Unidad Estratégica II (Parte B): Costos Variables, Gastos Fijos y Punto de Equilibrio', 'Pág. 9'],
-        ['SEC-10', 'Unidad Estratégica III (Parte A): Estado de Resultados, Balance, Flujo de Caja, VPN y TIR', 'Pág. 10'],
-        ['SEC-11', 'Unidad Estratégica III (Parte B): Conclusiones, Recomendaciones y Bibliografía', 'Pág. 11'],
+        ['SEC-07A', 'Unidad Estratégica I (Parte B): Estructura Organizacional y Organigrama de la Empresa', 'Pág. 7'],
+        ['SEC-07B', 'Unidad Estratégica I (Parte C): Perfiles de Cargos, Constitución y Marco Legal', 'Pág. 8'],
+        ['SEC-08', 'Unidad Estratégica II (Parte A): Modelo Financiero, Inversión Inicial y Financiación', 'Pág. 9'],
+        ['SEC-09', 'Unidad Estratégica II (Parte B): Costos Variables, Gastos Fijos y Punto de Equilibrio', 'Pág. 10'],
+        ['SEC-10', 'Unidad Estratégica III (Parte A): Estado de Resultados, Balance, Flujo de Caja, VPN y TIR', 'Pág. 11'],
+        ['SEC-11', 'Unidad Estratégica III (Parte B): Conclusiones, Recomendaciones y Bibliografía', 'Pág. 12'],
       ],
       8.5
     );
@@ -1054,24 +1081,87 @@ export async function generateVectorPDF(
   }
 
   // =========================================================================
-  // PÁGINA 7: UNIDAD ESTRATÉGICA I (PARTE B: ESTRUCTURA ORGANIZACIONAL Y MARCO LEGAL)
+  // PÁGINA 7: UNIDAD ESTRATÉGICA I (PARTE B: ESTRUCTURA ORGANIZACIONAL Y ORGANIGRAMA COMPLETO)
   // =========================================================================
   doc.addPage('letter', 'portrait');
-  drawPageChrome(7, 'SEC-07', 'Unidad Estratégica I: Organización y Marco Legal');
+  drawPageChrome(7, 'SEC-07A', 'Unidad Estratégica I: Estructura Organizacional y Organigrama');
   {
     let y = APA_MARGIN + 4;
     y = drawSectionBanner(
       y,
-      'Unidad Estratégica I: Estructura Organizacional y Estudio Legal',
-      'Sección 7'
+      'Unidad Estratégica I: Estructura Organizacional y Organigrama',
+      'Sección 7A'
     );
 
     y = drawHeadingLevel2(y, `2.1. Estructura Organizacional (${unidadI.organigrama.tipoEstructura})`);
-    y = drawApaParagraph(y, unidadI.organigrama.justificacionCultura, {
-      indentFirstLine: true,
-      fontSize: 8.5,
-      maxLines: 3,
-    });
+    y = drawApaParagraph(
+      y,
+      unidadI.organigrama.justificacionCultura ||
+        'La estructura organizacional responde a la articulación funcional de los procesos con el direccionamiento estratégico de la empresa.',
+      {
+        indentFirstLine: true,
+        fontSize: 8.5,
+        maxLines: 3,
+      }
+    );
+    y += 2;
+
+    y = drawApaTableCaption(
+      y,
+      'Figura 1',
+      `Organigrama Estructural de la Compañía (${unidadI.organigrama.tipoEstructura})`
+    );
+
+    if (organigramaImage) {
+      const maxAllowedH = Math.min(130, LETTER_HEIGHT - APA_MARGIN - y - 10);
+      const aspect =
+        organigramaImage.width && organigramaImage.height
+          ? organigramaImage.width / organigramaImage.height
+          : CONTENT_WIDTH / 115;
+
+      let renderW = CONTENT_WIDTH;
+      let renderH = renderW / aspect;
+
+      if (renderH > maxAllowedH) {
+        renderH = maxAllowedH;
+        renderW = renderH * aspect;
+      }
+
+      const renderX = APA_MARGIN + (CONTENT_WIDTH - renderW) / 2;
+
+      try {
+        doc.addImage(organigramaImage.dataUrl, organigramaImage.format, renderX, y, renderW, renderH);
+        doc.setDrawColor(203, 213, 225);
+        doc.setLineWidth(0.25);
+        doc.rect(renderX, y, renderW, renderH, 'S');
+        y += renderH + 3.5;
+      } catch {
+        // fallback
+      }
+    }
+
+    doc.setFont(pdfFont, 'italic');
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(
+      `Nota. Representación gráfica de la arquitectura organizacional, jerarquías de mando y órganos de asesoría (Staff) de ${portada.nombreTrabajo || 'la empresa'}.`,
+      APA_MARGIN,
+      y + 2
+    );
+  }
+
+  // =========================================================================
+  // PÁGINA 8: UNIDAD ESTRATÉGICA I (PARTE C: PERFILES DE CARGOS Y ESTUDIO LEGAL)
+  // =========================================================================
+  doc.addPage('letter', 'portrait');
+  drawPageChrome(8, 'SEC-07B', 'Unidad Estratégica I: Perfiles de Cargos y Estudio Legal');
+  {
+    let y = APA_MARGIN + 4;
+    y = drawSectionBanner(
+      y,
+      'Unidad Estratégica I: Perfiles de Cargos Directivos y Marco Legal',
+      'Sección 7B'
+    );
 
     y = drawApaTableCaption(y, 'Tabla 6', '2.2. Perfiles de Cargos y Asignación Salarial Mensual');
     y = drawVectorTable(
@@ -1091,6 +1181,7 @@ export async function generateVectorPDF(
       7.6
     );
 
+    y += 2;
     y = drawApaTableCaption(y, 'Tabla 7', '3. Constitución Societaria, Capital Social y 4. Normatividad');
     y = drawVectorTable(
       y,
@@ -1117,10 +1208,10 @@ export async function generateVectorPDF(
   }
 
   // =========================================================================
-  // PÁGINA 8: UNIDAD ESTRATÉGICA II (PARTE A: INVERSIÓN INICIAL Y FINANCIACIÓN)
+  // PÁGINA 9: UNIDAD ESTRATÉGICA II (PARTE A: INVERSIÓN INICIAL Y FINANCIACIÓN)
   // =========================================================================
   doc.addPage('letter', 'portrait');
-  drawPageChrome(8, 'SEC-08', 'Unidad Estratégica II: Inversión Inicial y Financiación');
+  drawPageChrome(9, 'SEC-08', 'Unidad Estratégica II: Inversión Inicial y Financiación');
   {
     let y = APA_MARGIN + 4;
     y = drawSectionBanner(
@@ -1196,10 +1287,10 @@ export async function generateVectorPDF(
   }
 
   // =========================================================================
-  // PÁGINA 9: UNIDAD ESTRATÉGICA II (PARTE B: COSTOS, GASTOS Y PUNTO DE EQUILIBRIO)
+  // PÁGINA 10: UNIDAD ESTRATÉGICA II (PARTE B: COSTOS, GASTOS Y PUNTO DE EQUILIBRIO)
   // =========================================================================
   doc.addPage('letter', 'portrait');
-  drawPageChrome(9, 'SEC-09', 'Unidad Estratégica II: Costos, Gastos y Punto de Equilibrio');
+  drawPageChrome(10, 'SEC-09', 'Unidad Estratégica II: Costos, Gastos y Punto de Equilibrio');
   {
     let y = APA_MARGIN + 4;
     y = drawSectionBanner(
@@ -1273,10 +1364,10 @@ export async function generateVectorPDF(
   }
 
   // =========================================================================
-  // PÁGINA 10: UNIDAD ESTRATÉGICA III (ESTADOS FINANCIEROS, VPN, TIR E INDICADORES)
+  // PÁGINA 11: UNIDAD ESTRATÉGICA III (ESTADOS FINANCIEROS, VPN, TIR E INDICADORES)
   // =========================================================================
   doc.addPage('letter', 'portrait');
-  drawPageChrome(10, 'SEC-10', 'Unidad Estratégica III: Estados e Indicadores Financieros');
+  drawPageChrome(11, 'SEC-10', 'Unidad Estratégica III: Estados e Indicadores Financieros');
   {
     let y = APA_MARGIN + 4;
     y = drawSectionBanner(
@@ -1382,10 +1473,10 @@ export async function generateVectorPDF(
   }
 
   // =========================================================================
-  // PÁGINA 11: CONCLUSIONES, RECOMENDACIONES Y REFERENCIAS BIBLIOGRÁFICAS
+  // PÁGINA 12: CONCLUSIONES, RECOMENDACIONES Y REFERENCIAS BIBLIOGRÁFICAS
   // =========================================================================
   doc.addPage('letter', 'portrait');
-  drawPageChrome(11, 'SEC-11', 'Conclusiones, Recomendaciones y Bibliografía');
+  drawPageChrome(12, 'SEC-11', 'Conclusiones, Recomendaciones y Bibliografía');
   {
     let y = APA_MARGIN + 4;
     y = drawSectionBanner(

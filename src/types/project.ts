@@ -24,6 +24,18 @@ export interface PortafolioItem {
   imagenUrl?: string;
 }
 
+export type TipoNodoOrganigrama = 'directivo' | 'staff' | 'departamento' | 'operativo';
+
+export interface OrganigramaNodo {
+  id: string;
+  cargo: string;
+  nombre?: string;
+  area: string;
+  parentId?: string | null;
+  tipo?: TipoNodoOrganigrama;
+  color?: string;
+}
+
 export interface CargoPerfil {
   id: string;
   nombreCargo: string;
@@ -135,6 +147,7 @@ export interface ProjectData {
       tipoEstructura: string;
       justificacionCultura: string; // Máximo 200 caracteres
       imagenUrl?: string;
+      nodos?: OrganigramaNodo[];
     };
     perfilesCargos: CargoPerfil[];
     figuraLegal: {
